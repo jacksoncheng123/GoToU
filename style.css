@@ -55,6 +55,34 @@ button:hover {
     background-color: #0052a3;
 }
 
+.university-selector {
+    margin: 20px 0;
+}
+
+.university-selector label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.university-selector select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: white;
+}
+
+#decision-times {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
 .note {
     font-size: 0.9em;
     color: #666;
@@ -97,5 +125,16 @@ button:hover {
     
     .note {
         color: #aaa;
+    }
+    
+    .university-selector select {
+        background-color: #3d3d3d;
+        color: #e0e0e0;
+        border-color: #555;
+    }
+    
+    #decision-times {
+        background-color: #3d3d3d;
+        color: #ccc;
     }
 }
