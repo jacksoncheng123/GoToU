@@ -1,0 +1,116 @@
+{
+  "universities": [
+    {
+      "id": "hku",
+      "name": "The University of Hong Kong (HKU)",
+      "decisionTimes": {
+        "morning": "07:01",
+        "afternoon": "12:01",
+        "all": "16:01"
+      },
+      "classTimes": {
+        "morning": "8:00 AM - 1:00 PM",
+        "afternoon": "2:00 PM - 6:30 PM",
+        "evening": "6:30 PM onwards"
+      }
+    },
+    {
+      "id": "cuhk",
+      "name": "The Chinese University of Hong Kong (CUHK)",
+      "decisionTimes": {
+        "morning": "07:30",
+        "afternoon": "12:30",
+        "all": "16:30"
+      },
+      "classTimes": {
+        "morning": "8:30 AM - 12:30 PM",
+        "afternoon": "2:30 PM - 6:00 PM",
+        "evening": "6:00 PM onwards"
+      }
+    },
+    {
+      "id": "hkust",
+      "name": "Hong Kong University of Science and Technology (HKUST)",
+      "decisionTimes": {
+        "morning": "07:15",
+        "afternoon": "12:15",
+        "all": "16:15"
+      },
+      "classTimes": {
+        "morning": "8:00 AM - 12:00 PM",
+        "afternoon": "1:30 PM - 6:00 PM",
+        "evening": "6:00 PM onwards"
+      }
+    },
+    {
+      "id": "cityu",
+      "name": "City University of Hong Kong (CityU)",
+      "decisionTimes": {
+        "morning": "07:00",
+        "afternoon": "12:00",
+        "all": "16:00"
+      },
+      "classTimes": {
+        "morning": "8:00 AM - 12:00 PM",
+        "afternoon": "2:00 PM - 6:30 PM",
+        "evening": "6:30 PM onwards"
+      }
+    },
+    {
+      "id": "polyu",
+      "name": "The Hong Kong Polytechnic University (PolyU)",
+      "decisionTimes": {
+        "morning": "07:01",
+        "afternoon": "12:01",
+        "all": "16:01"
+      },
+      "classTimes": {
+        "morning": "8:00 AM - 1:00 PM",
+        "afternoon": "2:00 PM - 6:00 PM",
+        "evening": "6:00 PM onwards"
+      }
+    },
+    {
+      "id": "hkbu",
+      "name": "Hong Kong Baptist University (HKBU)",
+      "decisionTimes": {
+        "morning": "07:01",
+        "afternoon": "12:01",
+        "all": "16:01"
+      },
+      "classTimes": {
+        "morning": "8:30 AM - 12:30 PM",
+        "afternoon": "2:30 PM - 6:30 PM",
+        "evening": "6:30 PM onwards"
+      }
+    },
+    {
+      "id": "ln",
+      "name": "Lingnan University (LN)",
+      "decisionTimes": {
+        "morning": "07:01",
+        "afternoon": "12:01",
+        "all": "16:01"
+      },
+      "classTimes": {
+        "morning": "9:00 AM - 12:00 PM",
+        "afternoon": "2:00 PM - 6:00 PM",
+        "evening": "6:00 PM onwards"
+      }
+    },
+    {
+      "id": "hkied",
+      "name": "The Education University of Hong Kong (EdUHK)",
+      "decisionTimes": {
+        "morning": "07:01",
+        "afternoon": "12:01",
+        "all": "16:01"
+      },
+      "classTimes": {
+        "morning": "8:30 AM - 12:30 PM",
+        "afternoon": "2:00 PM - 5:30 PM",
+        "evening": "6:00 PM onwards"
+      }
+    }
+  ]
+}
