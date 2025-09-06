@@ -185,34 +185,101 @@ async function updateStatus() {
         statusClass = 'cancelled';
         document.getElementById('warning-info').innerHTML = '';
     } else if (!hasWarning) {
-        statusText = '✅ No critical warning active.<br>You need to attend university as usual.';
-        statusClass = 'safe';
-        document.getElementById('warning-info').innerHTML = '';
+        // Check if there are cancelled warnings to display
+        let cancelledWarnings = [];
+        
+        if (warnings) {
+            // Check for cancelled Typhoon warnings
+            if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'CANCEL') {
+                const code = warnings.WTCSGNL.code;
+                if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
+                    code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
+                    
+                    let warningName;
+                    if (code.startsWith('TC8')) {
+                        warningName = 'Typhoon Signal No. 8';
+                    } else {
+                        warningName = `Typhoon Signal No. ${code.substring(2)}`;
+                    }
+                    
+                    const cancelTime = new Date(warnings.WTCSGNL.updateTime);
+                    const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
+                        timeZone: 'Asia/Hong_Kong',
+                        hour12: true,
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                    cancelledWarnings.push(`${warningName} (cancelled at ${cancelTimeStr})`);
+                }
+            }
+            
+            // Check for cancelled Black Rainstorm warning
+            if (warnings.WRAIN && warnings.WRAIN.actionCode === 'CANCEL' && warnings.WRAIN.code === 'WRAINB') {
+                const cancelTime = new Date(warnings.WRAIN.updateTime);
+                const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
+                    timeZone: 'Asia/Hong_Kong',
+                    hour12: true,
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+                cancelledWarnings.push(`Black Rainstorm Warning (cancelled at ${cancelTimeStr})`);
+            }
+        }
+        
+        if (cancelledWarnings.length > 0) {
+            statusText = '✅ No critical warning active.<br>You need to attend university as usual.';
+            statusClass = 'safe';
+            document.getElementById('warning-info').innerHTML = `<strong>Recently Cancelled:</strong> ${cancelledWarnings.join(', ')}`;
+        } else {
+            statusText = '✅ No critical warning active.<br>You need to attend university as usual.';
+            statusClass = 'safe';
+            document.getElementById('warning-info').innerHTML = '';
+        }
     } else if (decision) {
         // Get warning text for status message
         let warningText = '';
+        let isWarningCancelled = false;
+        
         if (warnings) {
             let criticalWarnings = [];
             
             // Check for Typhoon warnings
-            if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'ISSUE') {
+            if (warnings.WTCSGNL) {
                 const code = warnings.WTCSGNL.code;
                 if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
                     code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
+                    
+                    let warningName;
                     if (code.startsWith('TC8')) {
-                        criticalWarnings.push('Typhoon Signal No. 8');
+                        warningName = 'Typhoon Signal No. 8';
                     } else {
-                        criticalWarnings.push(`Typhoon Signal No. ${code.substring(2)}`);
+                        warningName = `Typhoon Signal No. ${code.substring(2)}`;
+                    }
+                    
+                    if (warnings.WTCSGNL.actionCode === 'ISSUE') {
+                        criticalWarnings.push(warningName);
+                    } else if (warnings.WTCSGNL.actionCode === 'CANCEL') {
+                        criticalWarnings.push(`${warningName} (cancelled)`);
+                        isWarningCancelled = true;
                     }
                 }
             }
             
             // Check for Black Rainstorm warning
-            if (warnings.WRAIN && warnings.WRAIN.actionCode === 'ISSUE' && warnings.WRAIN.code === 'WRAINB') {
-                criticalWarnings.push('Black Rainstorm Warning');
+            if (warnings.WRAIN && warnings.WRAIN.code === 'WRAINB') {
+                if (warnings.WRAIN.actionCode === 'ISSUE') {
+                    criticalWarnings.push('Black Rainstorm Warning');
+                } else if (warnings.WRAIN.actionCode === 'CANCEL') {
+                    criticalWarnings.push('Black Rainstorm Warning (cancelled)');
+                    isWarningCancelled = true;
+                }
             }
             
-            warningText = criticalWarnings.join(', ') || 'active warning';
+            warningText = criticalWarnings.join(', ') || 'warning';
         }
         
         if (decision === 'morning') {
@@ -230,44 +297,78 @@ async function updateStatus() {
             let criticalWarnings = [];
             
             // Check for Typhoon warnings
-            if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'ISSUE') {
+            if (warnings.WTCSGNL) {
                 const code = warnings.WTCSGNL.code;
                 if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
                     code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
+                    
+                    let warningName;
                     if (code.startsWith('TC8')) {
-                        criticalWarnings.push('Typhoon Signal No. 8');
+                        warningName = 'Typhoon Signal No. 8';
                     } else {
-                        criticalWarnings.push(`Typhoon Signal No. ${code.substring(2)}`);
+                        warningName = `Typhoon Signal No. ${code.substring(2)}`;
+                    }
+                    
+                    if (warnings.WTCSGNL.actionCode === 'ISSUE') {
+                        criticalWarnings.push(`${warningName} (Active)`);
+                    } else if (warnings.WTCSGNL.actionCode === 'CANCEL') {
+                        const cancelTime = new Date(warnings.WTCSGNL.updateTime);
+                        const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
+                            timeZone: 'Asia/Hong_Kong',
+                            hour12: true,
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        });
+                        criticalWarnings.push(`${warningName} (Cancelled at ${cancelTimeStr})`);
                     }
                 }
             }
             
             // Check for Black Rainstorm warning
-            if (warnings.WRAIN && warnings.WRAIN.actionCode === 'ISSUE' && warnings.WRAIN.code === 'WRAINB') {
-                criticalWarnings.push('Black Rainstorm Warning');
+            if (warnings.WRAIN && warnings.WRAIN.code === 'WRAINB') {
+                if (warnings.WRAIN.actionCode === 'ISSUE') {
+                    criticalWarnings.push('Black Rainstorm Warning (Active)');
+                } else if (warnings.WRAIN.actionCode === 'CANCEL') {
+                    const cancelTime = new Date(warnings.WRAIN.updateTime);
+                    const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
+                        timeZone: 'Asia/Hong_Kong',
+                        hour12: true,
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                    criticalWarnings.push(`Black Rainstorm Warning (Cancelled at ${cancelTimeStr})`);
+                }
             }
             
             warningInfo = criticalWarnings.join(', ');
         }
-        document.getElementById('warning-info').innerHTML = `<strong>Active Warnings:</strong> ${warningInfo || 'Critical warning detected'}`;
+        document.getElementById('warning-info').innerHTML = `<strong>Warnings:</strong> ${warningInfo || 'Critical warning detected'}`;
     } else {
         // Show what warning is active but decision time not reached yet
         let activeWarnings = [];
         
-        // Check for active Typhoon warnings
+        // Check for Typhoon warnings (only ISSUE, not CANCEL)
         if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'ISSUE') {
             const code = warnings.WTCSGNL.code;
             if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
                 code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
+                
+                let warningName;
                 if (code.startsWith('TC8')) {
-                    activeWarnings.push('Typhoon Signal No. 8');
+                    warningName = 'Typhoon Signal No. 8';
                 } else {
-                    activeWarnings.push(`Typhoon Signal No. ${code.substring(2)}`);
+                    warningName = `Typhoon Signal No. ${code.substring(2)}`;
                 }
+                
+                activeWarnings.push(warningName);
             }
         }
         
-        // Check for active Black Rainstorm warning
+        // Check for Black Rainstorm warning (only ISSUE, not CANCEL)
         if (warnings.WRAIN && warnings.WRAIN.actionCode === 'ISSUE' && warnings.WRAIN.code === 'WRAINB') {
             activeWarnings.push('Black Rainstorm Warning');
         }
