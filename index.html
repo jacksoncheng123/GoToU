@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HK Uni Attendance Checker - Weather Alerts</title>
+    <title>Go To U?</title>
+    <meta name="description" content="Check if university classes are cancelled due to weather warnings in Hong Kong">
+    <meta name="theme-color" content="#0066cc">
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bS0yIDE1bC01LTUgMS40MS0xLjQxTDEwIDE0LjE3bDcuNTktNy41OUwxOSA4bC05IDl6IiBmaWxsPSIjMDA2NmNjIi8+Cjwvc3ZnPg==">
 </head>
 <body>
     <div class="container">
@@ -15,7 +19,12 @@
         <div id="status"></div>
         <div id="warning-info"></div>
         <button onclick="checkStatus()">Check Now</button>
-        <p class="note">Auto-refreshes every 5 minutes. Rules: Warning at 7:01 AM → No morning classes; at 12:01 PM → No afternoon; at 4:01 PM → All cancelled.</p>
+            <p class="note">Auto-refreshes every 5 minutes.</p>
+            <div class="note-row" style="display: flex; gap: 1em;">
+                <p>at 7:01 AM → No morning classes</p>
+                <p>at 12:01 PM → No afternoon (2pm-6:30pm)</p>
+                <p>at 4:01 PM → All cancelled</p>
+            </div>
     </div>
 
     <script src="script.js"></script>
