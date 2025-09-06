@@ -53,7 +53,17 @@ function checkDecisionPoints(currentTime) {
 // Main function to update status
 async function updateStatus() {
     const currentTime = getCurrentHKT();
-    const timeStr = currentTime.toLocaleString('en-HK', { timeZone: 'Asia/Hong_Kong' });
+    // Format time explicitly for HKT
+    const timeStr = currentTime.toLocaleString('en-HK', { 
+        timeZone: 'Asia/Hong_Kong',
+        hour12: true,
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
     
     document.getElementById('current-time').innerHTML = `<strong>Current HKT:</strong> ${timeStr}`;
     
