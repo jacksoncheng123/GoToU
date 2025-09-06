@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HK Uni Attendance Checker - Weather Alerts</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Do I Need to Go to University Today?</h1>
+        <p>Based on HKO Typhoon (8+) or Black Rainstorm Warnings</p>
+        
+        <div id="current-time"></div>
+        <div id="status"></div>
+        <div id="warning-info"></div>
+        <button onclick="checkStatus()">Check Now</button>
+        <p class="note">Auto-refreshes every 5 minutes. Rules: Warning at 7:01 AM → No morning classes; at 12:01 PM → No afternoon; at 4:01 PM → All cancelled.</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
