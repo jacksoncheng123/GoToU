@@ -15,16 +15,19 @@
         <h1>Do I Need to Go to University Today?</h1>
         <p>Based on HKO Typhoon (8+) or Black Rainstorm Warnings</p>
         
+        <div class="university-selector">
+            <label for="university-select">Select your university:</label>
+            <select id="university-select">
+                <option value="">Loading universities...</option>
+            </select>
+        </div>
+        
         <div id="current-time"></div>
+        <div id="decision-times"></div>
         <div id="status"></div>
         <div id="warning-info"></div>
         <button onclick="checkStatus()">Check Now</button>
             <p class="note">Auto-refreshes every 5 minutes.</p>
-            <div class="note-row" style="display: flex; gap: 1em;">
-                <p>at 7:01 AM → No morning classes</p>
-                <p>at 12:01 PM → No afternoon (2pm-6:30pm)</p>
-                <p>at 4:01 PM → All cancelled</p>
-            </div>
     </div>
 
     <script src="script.js"></script>
