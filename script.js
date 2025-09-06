@@ -11,6 +11,22 @@ async function fetchWarnings() {
     }
 }
 
+// Function to fetch current HKT from worldtimeapi.org
+async function getCurrentHKT() {
+    try {
+        const response = await fetch('http://worldtimeapi.org/api/timezone/Asia/Hong_Kong');
+        if (!response.ok) throw new Error('Time API fetch failed');
+        const data = await response.json();
+        return new Date(data.datetime); // Returns HKT as a Date object
+    } catch (error) {
+        console.error('Error fetching HKT:', error);
+        // Fallback: Assume current time (less reliable, but prevents failure)
+        const now = new Date();
+        const hktOffset = 8 * 60 * 60 * 1000; // UTC+8 in ms
+        return new Date(now.getTime() + hktOffset);
+    }
+}
+
 // Function to check if critical warning is active
 function isCriticalWarningActive(warnings) {
     if (!warnings || !warnings.warningInfo || !warnings.warningInfo.warningList) {
@@ -23,14 +39,6 @@ function isCriticalWarningActive(warnings) {
         // Black Rainstorm: 'RWS'
         return code === 'TC8' || code === 'TC9' || code === 'TC10' || code === 'RWS';
     });
-}
-
-// Function to get current HKT
-function getCurrentHKT() {
-    const now = new Date();
-    const hktOffset = 8 * 60 * 60 * 1000; // UTC+8 in ms
-    const hkt = new Date(now.getTime() + hktOffset);
-    return hkt;
 }
 
 // Function to check decision points
@@ -52,7 +60,7 @@ function checkDecisionPoints(currentTime) {
 
 // Main function to update status
 async function updateStatus() {
-    const currentTime = getCurrentHKT();
+    const currentTime = await getCurrentHKT();
     // Format time explicitly for HKT
     const timeStr = currentTime.toLocaleString('en-HK', { 
         timeZone: 'Asia/Hong_Kong',
@@ -75,9 +83,14 @@ async function updateStatus() {
     let statusText = '';
     let statusClass = '';
     
-    if (!hasWarning) {
+    if (!warnings) {
+        statusText = '⚠️ Unable to fetch weather warnings. Please try again later.';
+        statusClass = 'cancelled';
+        document.getElementById('warning-info').innerHTML = '';
+    } else if (!hasWarning) {
         statusText = '✅ No critical warning active. You may need to attend university as usual.';
         statusClass = 'safe';
+        document.getElementById('warning-info').innerHTML = '';
     } else if (decision) {
         if (decision === 'morning') {
             statusText = '❌ Morning classes (before 2 PM) cancelled due to active warning.';
