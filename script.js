@@ -1,3 +1,83 @@
+// Global variables
+let universitiesData = null;
+let selectedUniversity = null;
+
+// Function to fetch universities data
+async function fetchUniversities() {
+    try {
+        const response = await fetch('./universities.json');
+        if (!response.ok) throw new Error('Universities data fetch failed');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching universities:', error);
+        return null;
+    }
+}
+
+// Function to populate university selector
+async function populateUniversitySelector() {
+    universitiesData = await fetchUniversities();
+    const selector = document.getElementById('university-select');
+    
+    if (!universitiesData) {
+        selector.innerHTML = '<option value="">Error loading universities</option>';
+        return;
+    }
+    
+    // Clear loading message
+    selector.innerHTML = '';
+    
+    // Add default option
+    selector.innerHTML = '<option value="">Choose your university...</option>';
+    
+    // Add universities
+    universitiesData.universities.forEach(uni => {
+        const option = document.createElement('option');
+        option.value = uni.id;
+        option.textContent = uni.name;
+        selector.appendChild(option);
+    });
+    
+    // Load saved selection
+    const saved = localStorage.getItem('selectedUniversity');
+    if (saved) {
+        selector.value = saved;
+        updateSelectedUniversity(saved);
+    }
+    
+    // Add event listener
+    selector.addEventListener('change', function() {
+        const selectedId = this.value;
+        if (selectedId) {
+            localStorage.setItem('selectedUniversity', selectedId);
+            updateSelectedUniversity(selectedId);
+        } else {
+            localStorage.removeItem('selectedUniversity');
+            selectedUniversity = null;
+            document.getElementById('decision-times').innerHTML = '';
+        }
+        updateStatus();
+    });
+}
+
+// Function to update selected university and display decision times
+function updateSelectedUniversity(universityId) {
+    selectedUniversity = universitiesData.universities.find(uni => uni.id === universityId);
+    
+    if (selectedUniversity) {
+        const times = selectedUniversity.decisionTimes;
+        const classes = selectedUniversity.classTimes;
+        document.getElementById('decision-times').innerHTML = 
+            `<strong>${selectedUniversity.name}</strong><br>` +
+            `<strong>Decision Times:</strong> ${times.morning} AM → No morning classes | ` +
+            `${times.afternoon} PM → No afternoon classes | ` +
+            `${times.all} PM → All classes cancelled<br>` +
+            `<strong>Class Times:</strong> Morning: ${classes.morning} | ` +
+            `Afternoon: ${classes.afternoon} | Evening: ${classes.evening}`;
+    }
+}
+
 // Function to fetch current warnings from HKO API
 async function fetchWarnings() {
     try {
@@ -68,7 +148,20 @@ function checkDecisionPoints(currentTime, warnings) {
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
     
-    if (!warnings) return null;
+    if (!warnings || !selectedUniversity) return null;
+    
+    // Get decision times for selected university
+    const decisionTimes = selectedUniversity.decisionTimes;
+    const morningTime = decisionTimes.morning.split(':');
+    const afternoonTime = decisionTimes.afternoon.split(':');
+    const allTime = decisionTimes.all.split(':');
+    
+    const morningHour = parseInt(morningTime[0]);
+    const morningMin = parseInt(morningTime[1]);
+    const afternoonHour = parseInt(afternoonTime[0]);
+    const afternoonMin = parseInt(afternoonTime[1]);
+    const allHour = parseInt(allTime[0]);
+    const allMin = parseInt(allTime[1]);
     
     // Check if there are any active critical warnings (ISSUE status)
     let hasActiveCriticalWarning = false;
@@ -90,14 +183,14 @@ function checkDecisionPoints(currentTime, warnings) {
     // If there are active critical warnings, use current time for decision points
     if (hasActiveCriticalWarning) {
         // Check current time against decision points
-        if (hours > 16 || (hours === 16 && minutes >= 1)) {
-            // After 4:01 PM - all remaining classes cancelled
+        if (hours > allHour || (hours === allHour && minutes >= allMin)) {
+            // After all classes decision time
             return 'all';
-        } else if (hours > 12 || (hours === 12 && minutes >= 1)) {
-            // After 12:01 PM - afternoon classes cancelled
+        } else if (hours > afternoonHour || (hours === afternoonHour && minutes >= afternoonMin)) {
+            // After afternoon decision time
             return 'afternoon';
-        } else if (hours > 7 || (hours === 7 && minutes >= 1)) {
-            // After 7:01 AM - morning classes cancelled
+        } else if (hours > morningHour || (hours === morningHour && minutes >= morningMin)) {
+            // After morning decision time
             return 'morning';
         }
     }
@@ -133,21 +226,19 @@ function checkDecisionPoints(currentTime, warnings) {
         const warningHours = earliestDecisionTime.getHours();
         const warningMinutes = earliestDecisionTime.getMinutes();
         
-        // If warning was cancelled before 7:01 AM and current time is after 7:01 AM
-        if ((warningHours < 7 || (warningHours === 7 && warningMinutes < 1)) && 
-            (hours > 7 || (hours === 7 && minutes >= 1))) {
+        // Check against university-specific decision times
+        if ((warningHours < morningHour || (warningHours === morningHour && warningMinutes < morningMin)) && 
+            (hours > morningHour || (hours === morningHour && minutes >= morningMin))) {
             return 'morning';
         }
         
-        // If warning was cancelled before 12:01 PM and current time is after 12:01 PM
-        if ((warningHours < 12 || (warningHours === 12 && warningMinutes < 1)) && 
-            (hours > 12 || (hours === 12 && minutes >= 1))) {
+        if ((warningHours < afternoonHour || (warningHours === afternoonHour && warningMinutes < afternoonMin)) && 
+            (hours > afternoonHour || (hours === afternoonHour && minutes >= afternoonMin))) {
             return 'afternoon';
         }
         
-        // If warning was cancelled before 4:01 PM and current time is after 4:01 PM
-        if ((warningHours < 16 || (warningHours === 16 && warningMinutes < 1)) && 
-            (hours > 16 || (hours === 16 && minutes >= 1))) {
+        if ((warningHours < allHour || (warningHours === allHour && warningMinutes < allMin)) && 
+            (hours > allHour || (hours === allHour && minutes >= allMin))) {
             return 'all';
         }
     }
@@ -172,13 +263,23 @@ async function updateStatus() {
     
     document.getElementById('current-time').innerHTML = `<strong>Current HKT:</strong> ${timeStr}`;
     
-    const warnings = await fetchWarnings();
-    const hasWarning = isCriticalWarningActive(warnings);
-    const decision = checkDecisionPoints(currentTime, warnings);
-    
     let statusEl = document.getElementById('status');
     let statusText = '';
     let statusClass = '';
+    
+    // Check if university is selected
+    if (!selectedUniversity) {
+        statusText = '📚 Please select your university first to check class status.';
+        statusClass = 'safe';
+        document.getElementById('warning-info').innerHTML = '';
+        statusEl.innerHTML = statusText;
+        statusEl.className = statusClass;
+        return;
+    }
+    
+    const warnings = await fetchWarnings();
+    const hasWarning = isCriticalWarningActive(warnings);
+    const decision = checkDecisionPoints(currentTime, warnings);
     
     if (!warnings) {
         statusText = '⚠️ Unable to fetch weather warnings.<br>Please try again later.';
@@ -283,9 +384,11 @@ async function updateStatus() {
         }
         
         if (decision === 'morning') {
-            statusText = `❌ Morning classes (before 2 PM) cancelled due to ${warningText}.`;
+            const morningTime = selectedUniversity.classTimes.morning;
+            statusText = `❌ Morning classes (${morningTime}) cancelled due to ${warningText}.`;
         } else if (decision === 'afternoon') {
-            statusText = `❌ Afternoon classes (2 PM - 6:30 PM) cancelled due to ${warningText}.`;
+            const afternoonTime = selectedUniversity.classTimes.afternoon;
+            statusText = `❌ Afternoon classes (${afternoonTime}) cancelled due to ${warningText}.`;
         } else if (decision === 'all') {
             statusText = `❌ All remaining classes cancelled due to ${warningText}.`;
         }
@@ -392,7 +495,12 @@ function checkStatus() {
 setInterval(updateStatus, 300000);
 
 // Initial load
-updateStatus();
+async function initialize() {
+    await populateUniversitySelector();
+    updateStatus();
+}
+
+initialize();
 
 // Register service worker for PWA functionality
 if ('serviceWorker' in navigator) {
