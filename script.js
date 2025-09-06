@@ -261,7 +261,7 @@ async function updateStatus() {
         second: '2-digit'
     });
     
-    document.getElementById('current-time').innerHTML = `<strong>Current HKT:</strong> ${timeStr}`;
+    document.getElementById('current-time').innerHTML = `<strong>Updated at HKT:</strong> ${timeStr}`;
     
     let statusEl = document.getElementById('status');
     let statusText = '';
