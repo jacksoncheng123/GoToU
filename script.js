@@ -107,16 +107,17 @@ async function fetchWarnings() {
 // Function to fetch current HKT from worldtimeapi.org
 async function getCurrentHKT() {
     try {
-        const response = await fetch('http://worldtimeapi.org/api/timezone/Asia/Hong_Kong');
+        const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Hong_Kong');
         if (!response.ok) throw new Error('Time API fetch failed');
         const data = await response.json();
         return new Date(data.datetime); // Returns HKT as a Date object
     } catch (error) {
         console.error('Error fetching HKT:', error);
-        // Fallback: Assume current time (less reliable, but prevents failure)
+        // Fallback: Calculate HKT from UTC regardless of user's timezone
         const now = new Date();
-        const hktOffset = 8 * 60 * 60 * 1000*0; // UTC+8 in ms
-        return new Date(now.getTime() + hktOffset);
+        const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000); // Convert to UTC
+        const hktOffset = 8 * 60 * 60 * 1000; // UTC+8 in milliseconds
+        return new Date(utcTime + hktOffset); // Return HKT time
     }
 }
 
