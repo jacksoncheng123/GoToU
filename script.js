@@ -70,82 +70,82 @@ function checkDecisionPoints(currentTime, warnings) {
     
     if (!warnings) return null;
     
-    // Check for critical warnings and their decision times
-    let earliestDecisionTime = null;
-    let decisionType = null;
+    // Check if there are any active critical warnings (ISSUE status)
+    let hasActiveCriticalWarning = false;
     
-    // Check Typhoon warnings
-    if (warnings.WTCSGNL) {
+    // Check for active Typhoon warnings
+    if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'ISSUE') {
         const code = warnings.WTCSGNL.code;
-        // Check if it's a critical typhoon signal (8, 9, 10)
+        if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
+            code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
+            hasActiveCriticalWarning = true;
+        }
+    }
+    
+    // Check for active Black Rainstorm warning
+    if (warnings.WRAIN && warnings.WRAIN.actionCode === 'ISSUE' && warnings.WRAIN.code === 'WRAINB') {
+        hasActiveCriticalWarning = true;
+    }
+    
+    // If there are active critical warnings, use current time for decision points
+    if (hasActiveCriticalWarning) {
+        // Check current time against decision points
+        if (hours > 16 || (hours === 16 && minutes >= 1)) {
+            // After 4:01 PM - all remaining classes cancelled
+            return 'all';
+        } else if (hours > 12 || (hours === 12 && minutes >= 1)) {
+            // After 12:01 PM - afternoon classes cancelled
+            return 'afternoon';
+        } else if (hours > 7 || (hours === 7 && minutes >= 1)) {
+            // After 7:01 AM - morning classes cancelled
+            return 'morning';
+        }
+    }
+    
+    // If no active warnings, check for cancelled warnings and their decision times
+    let earliestDecisionTime = null;
+    
+    // Check cancelled Typhoon warnings
+    if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'CANCEL') {
+        const code = warnings.WTCSGNL.code;
         if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
             code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
             
-            let decisionTime;
-            if (warnings.WTCSGNL.actionCode === 'ISSUE') {
-                // For ISSUE: use updateTime if it's newer than issueTime, otherwise use issueTime
-                const issueTime = warnings.WTCSGNL.issueTime ? new Date(warnings.WTCSGNL.issueTime) : null;
-                const updateTime = warnings.WTCSGNL.updateTime ? new Date(warnings.WTCSGNL.updateTime) : null;
-                
-                if (updateTime && issueTime && updateTime > issueTime) {
-                    decisionTime = updateTime;
-                } else if (issueTime) {
-                    decisionTime = issueTime;
-                }
-            } else if (warnings.WTCSGNL.actionCode === 'CANCEL' && warnings.WTCSGNL.updateTime) {
-                // For CANCEL: use updateTime
-                decisionTime = new Date(warnings.WTCSGNL.updateTime);
-            }
-            
-            if (decisionTime) {
+            if (warnings.WTCSGNL.updateTime) {
+                const decisionTime = new Date(warnings.WTCSGNL.updateTime);
                 earliestDecisionTime = decisionTime;
             }
         }
     }
     
-    // Check Black Rainstorm warning
-    if (warnings.WRAIN && warnings.WRAIN.code === 'WRAINB') {
-        let decisionTime;
-        if (warnings.WRAIN.actionCode === 'ISSUE') {
-            // For ISSUE: use updateTime if it's newer than issueTime, otherwise use issueTime
-            const issueTime = warnings.WRAIN.issueTime ? new Date(warnings.WRAIN.issueTime) : null;
-            const updateTime = warnings.WRAIN.updateTime ? new Date(warnings.WRAIN.updateTime) : null;
-            
-            if (updateTime && issueTime && updateTime > issueTime) {
-                decisionTime = updateTime;
-            } else if (issueTime) {
-                decisionTime = issueTime;
-            }
-        } else if (warnings.WRAIN.actionCode === 'CANCEL' && warnings.WRAIN.updateTime) {
-            // For CANCEL: use updateTime
-            decisionTime = new Date(warnings.WRAIN.updateTime);
-        }
-        
-        if (decisionTime) {
+    // Check cancelled Black Rainstorm warning
+    if (warnings.WRAIN && warnings.WRAIN.actionCode === 'CANCEL' && warnings.WRAIN.code === 'WRAINB') {
+        if (warnings.WRAIN.updateTime) {
+            const decisionTime = new Date(warnings.WRAIN.updateTime);
             if (!earliestDecisionTime || decisionTime < earliestDecisionTime) {
                 earliestDecisionTime = decisionTime;
             }
         }
     }
     
-    // Check decision points based on earliest warning time
+    // Check decision points based on earliest cancelled warning time
     if (earliestDecisionTime) {
         const warningHours = earliestDecisionTime.getHours();
         const warningMinutes = earliestDecisionTime.getMinutes();
         
-        // If warning was issued/cancelled before 7:01 AM and current time is after 7:01 AM
+        // If warning was cancelled before 7:01 AM and current time is after 7:01 AM
         if ((warningHours < 7 || (warningHours === 7 && warningMinutes < 1)) && 
             (hours > 7 || (hours === 7 && minutes >= 1))) {
             return 'morning';
         }
         
-        // If warning was issued/cancelled before 12:01 PM and current time is after 12:01 PM
+        // If warning was cancelled before 12:01 PM and current time is after 12:01 PM
         if ((warningHours < 12 || (warningHours === 12 && warningMinutes < 1)) && 
             (hours > 12 || (hours === 12 && minutes >= 1))) {
             return 'afternoon';
         }
         
-        // If warning was issued/cancelled before 4:01 PM and current time is after 4:01 PM
+        // If warning was cancelled before 4:01 PM and current time is after 4:01 PM
         if ((warningHours < 16 || (warningHours === 16 && warningMinutes < 1)) && 
             (hours > 16 || (hours === 16 && minutes >= 1))) {
             return 'all';
