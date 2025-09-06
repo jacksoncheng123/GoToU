@@ -1,0 +1,62 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #0066cc;
+}
+
+#current-time {
+    font-size: 1.2em;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+#status {
+    font-size: 1.5em;
+    margin: 20px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.safe { background-color: #d4edda; color: #155724; }
+.cancelled { background-color: #f8d7da; color: #721c24; }
+
+#warning-info {
+    margin: 20px 0;
+    font-style: italic;
+}
+
+button {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0052a3;
+}
+
+.note {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 30px;
+}
