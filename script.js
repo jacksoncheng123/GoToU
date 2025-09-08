@@ -1,6 +1,167 @@
 // Global variables
 let universitiesData = null;
 let selectedUniversity = null;
+let lastCriticalWarnings = null; // Track last known critical warnings
+
+// Function to save critical warnings to localStorage
+function saveCriticalWarnings(warnings) {
+    if (!warnings) return;
+    
+    let currentCriticalWarnings = {};
+    
+    // Check for critical Typhoon warnings
+    if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'ISSUE') {
+        const code = warnings.WTCSGNL.code;
+        if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
+            code === 'TC8SW' || code === 'TC8NW' || code === 'TC9' || code === 'TC10') {
+            currentCriticalWarnings.WTCSGNL = {
+                ...warnings.WTCSGNL,
+                timestamp: new Date().toISOString()
+            };
+        }
+    }
+    
+    // Check for critical Black Rainstorm warning
+    if (warnings.WRAIN && warnings.WRAIN.actionCode === 'ISSUE' && warnings.WRAIN.code === 'WRAINB') {
+        currentCriticalWarnings.WRAIN = {
+            ...warnings.WRAIN,
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    // Save to localStorage if we have critical warnings
+    if (Object.keys(currentCriticalWarnings).length > 0) {
+        localStorage.setItem('lastCriticalWarnings', JSON.stringify(currentCriticalWarnings));
+        lastCriticalWarnings = currentCriticalWarnings;
+    }
+}
+
+// Function to load last critical warnings from localStorage
+function loadLastCriticalWarnings() {
+    try {
+        const saved = localStorage.getItem('lastCriticalWarnings');
+        if (saved) {
+            lastCriticalWarnings = JSON.parse(saved);
+            return lastCriticalWarnings;
+        }
+    } catch (error) {
+        console.error('Error loading last critical warnings:', error);
+    }
+    return null;
+}
+
+// Function to clear old critical warnings (older than 24 hours)
+function clearOldCriticalWarnings() {
+    if (!lastCriticalWarnings) return;
+    
+    const now = new Date();
+    let hasChanges = false;
+    
+    Object.keys(lastCriticalWarnings).forEach(key => {
+        const warning = lastCriticalWarnings[key];
+        if (warning.timestamp) {
+            const warningTime = new Date(warning.timestamp);
+            const hoursDiff = (now - warningTime) / (1000 * 60 * 60);
+            
+            // Remove warnings older than 24 hours
+            if (hoursDiff > 24) {
+                delete lastCriticalWarnings[key];
+                hasChanges = true;
+            }
+        }
+    });
+    
+    if (hasChanges) {
+        if (Object.keys(lastCriticalWarnings).length === 0) {
+            localStorage.removeItem('lastCriticalWarnings');
+            lastCriticalWarnings = null;
+        } else {
+            localStorage.setItem('lastCriticalWarnings', JSON.stringify(lastCriticalWarnings));
+        }
+    }
+    
+    // Clean up any old history storage that might exist
+    localStorage.removeItem('criticalWarningsHistory');
+}
+
+// Function to detect if critical warning was cancelled/replaced
+function getCancelledCriticalWarnings(currentWarnings) {
+    if (!lastCriticalWarnings) return [];
+    
+    let cancelledWarnings = [];
+    
+    // Check if previous critical typhoon warning is no longer critical
+    if (lastCriticalWarnings.WTCSGNL) {
+        const currentTC = currentWarnings?.WTCSGNL;
+        
+        // If no current typhoon warning, or current is not critical
+        const isCurrentCritical = currentTC && currentTC.actionCode === 'ISSUE' && 
+            (currentTC.code === 'TC8' || currentTC.code === 'TC8NE' || currentTC.code === 'TC8SE' || 
+             currentTC.code === 'TC8SW' || currentTC.code === 'TC8NW' || currentTC.code === 'TC9' || currentTC.code === 'TC10');
+        
+        if (!isCurrentCritical) {
+            // Last critical typhoon warning was cancelled/replaced
+            const lastTC = lastCriticalWarnings.WTCSGNL;
+            let warningName;
+            if (lastTC.code.startsWith('TC8')) {
+                warningName = 'Typhoon Signal No. 8';
+            } else {
+                warningName = `Typhoon Signal No. ${lastTC.code.substring(2)}`;
+            }
+            
+            const cancelTime = new Date();
+            const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
+                timeZone: 'Asia/Hong_Kong',
+                hour12: true,
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            
+            cancelledWarnings.push(`${warningName} (cancelled at ${cancelTimeStr})`);
+            
+            // Remove from tracking since we've reported it
+            delete lastCriticalWarnings.WTCSGNL;
+        }
+    }
+    
+    // Check if previous critical rain warning is no longer critical
+    if (lastCriticalWarnings.WRAIN) {
+        const currentRain = currentWarnings?.WRAIN;
+        
+        const isCurrentCritical = currentRain && currentRain.actionCode === 'ISSUE' && currentRain.code === 'WRAINB';
+        
+        if (!isCurrentCritical) {
+            const cancelTime = new Date();
+            const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
+                timeZone: 'Asia/Hong_Kong',
+                hour12: true,
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            
+            cancelledWarnings.push(`Black Rainstorm Warning (cancelled at ${cancelTimeStr})`);
+            
+            // Remove from tracking since we've reported it
+            delete lastCriticalWarnings.WRAIN;
+        }
+    }
+    
+    // Update localStorage if we made changes
+    if (cancelledWarnings.length > 0) {
+        if (Object.keys(lastCriticalWarnings).length === 0) {
+            localStorage.removeItem('lastCriticalWarnings');
+            lastCriticalWarnings = null;
+        } else {
+            localStorage.setItem('lastCriticalWarnings', JSON.stringify(lastCriticalWarnings));
+        }
+    }
+    
+    return cancelledWarnings;
+}
 
 // Function to fetch universities data
 async function fetchUniversities() {
@@ -90,12 +251,18 @@ async function fetchWarnings() {
             if (!response.ok) throw new Error('Test data fetch failed');
             const data = await response.json();
             console.log('Using test data:', data);
+            
+            // Track critical warnings for test data too
+            saveCriticalWarnings(data);
             return data;
         } else {
             // Use real API
             const response = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=en');
             if (!response.ok) throw new Error('API fetch failed');
             const data = await response.json();
+            
+            // Track critical warnings
+            saveCriticalWarnings(data);
             return data;
         }
     } catch (error) {
@@ -291,7 +458,7 @@ async function updateStatus() {
         let cancelledWarnings = [];
         
         if (warnings) {
-            // Check for cancelled Typhoon warnings
+            // Check for explicitly cancelled Typhoon warnings in API
             if (warnings.WTCSGNL && warnings.WTCSGNL.actionCode === 'CANCEL') {
                 const code = warnings.WTCSGNL.code;
                 if (code === 'TC8' || code === 'TC8NE' || code === 'TC8SE' || 
@@ -317,7 +484,7 @@ async function updateStatus() {
                 }
             }
             
-            // Check for cancelled Black Rainstorm warning
+            // Check for explicitly cancelled Black Rainstorm warning in API
             if (warnings.WRAIN && warnings.WRAIN.actionCode === 'CANCEL' && warnings.WRAIN.code === 'WRAINB') {
                 const cancelTime = new Date(warnings.WRAIN.updateTime);
                 const cancelTimeStr = cancelTime.toLocaleString('en-HK', { 
@@ -331,6 +498,10 @@ async function updateStatus() {
                 cancelledWarnings.push(`Black Rainstorm Warning (cancelled at ${cancelTimeStr})`);
             }
         }
+        
+        // Check for critical warnings that were cancelled/replaced (not in API anymore)
+        const replacedWarnings = getCancelledCriticalWarnings(warnings);
+        cancelledWarnings = cancelledWarnings.concat(replacedWarnings);
         
         if (cancelledWarnings.length > 0) {
             statusText = '✅ No critical warning active.<br>You need to attend university as usual.';
@@ -497,6 +668,12 @@ setInterval(updateStatus, 300000);
 
 // Initial load
 async function initialize() {
+    // Load previously saved critical warnings
+    loadLastCriticalWarnings();
+    
+    // Clean up old critical warnings (older than 24 hours)
+    clearOldCriticalWarnings();
+    
     await populateUniversitySelector();
     updateStatus();
 }
