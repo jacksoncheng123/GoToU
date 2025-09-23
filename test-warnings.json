@@ -8,10 +8,18 @@
   },
   "WTCSGNL": {
     "name": "Tropical Cyclone Warning Signal",
-    "code": "TC10",
-    "actionCode": "CANCEL",
-    "type": "Standby Signal No. 1",
-    "issueTime": "2025-09-06T07:00:00+08:00",
-    "updateTime": "2025-09-06T16:00:00+08:00"
+    "code": "TC3",
+    "actionCode": "ISSUE",
+    "type": "Standby Signal No. 3",
+    "issueTime": "2025-09-22T21:40:00+08:00",
+    "updateTime": "2025-09-22T21:40:00+08:00"
+  },
+  "WTCSGNL": {
+    "name": "Tropical Cyclone Warning Signal",
+    "code": "TC8",
+    "actionCode": "ISSUE",
+    "type": "Signal No. 8",
+    "issueTime": "2025-09-23T14:20:00+08:00",
+    "updateTime": "2025-09-23T14:20:00+08:00"
   }
 }
